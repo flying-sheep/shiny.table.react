@@ -1,28 +1,21 @@
 #' @importFrom htmltools singleton tagList tags HTML div attachDependencies htmlDependency
 #' @importFrom shiny icon registerInputHandler
 #' @export
-table_react <- function(inputId, leftLabel, rightLabel, leftChoices, rightChoices, size = 5, multiple = FALSE) {
+table_react <- function(id) {
 	register_handler()
 
-  multiple <- if (multiple) 'multiple' else NULL
+  attachDependencies(div(id = id, class = 'react-table-container'), deps())
+}
 
-  table <- tagList(
-    div(id = inputId, class = 'chooser',
-      div(class = 'chooser-container chooser-left-container',
-        tags$select(class = 'left', size = size, multiple = multiple, lapply(leftChoices,  tags$option))
-      ),
-      div(class = 'chooser-container chooser-center-container',
-        icon('arrow-circle-o-right', 'right-arrow fa-3x'),
-        tags$br(),
-        icon('arrow-circle-o-left', 'left-arrow fa-3x')
-      ),
-      div(class = 'chooser-container chooser-right-container',
-        tags$select(class = 'right', size = size, multiple = multiple, lapply(rightChoices, tags$option))
-      )
-    )
-  )
+#' @importFrom purrr compact
+#' @export
+table_react_select <- function(session, id, selected = NULL) {
+	session$sendInputMessage(id, compact(list(value = selected)))
+}
 
-  attachDependencies(table, deps())
+table_react_update <- function(session, id, columns = NULL, selected = NULL) {
+	session$sendCustomMessage(type = 'update-table-react', compact(list(
+		id = id, columns = columns, selected = selected)))
 }
 
 register_handler <- function() {
@@ -30,15 +23,15 @@ register_handler <- function() {
 		if (is.null(data))
 			NULL
 		else
-			list(left = as.character(data$left), right = as.character(data$right))
+			data
 	}, force = TRUE)
 }
 
 deps <- function(dev = TRUE) list(
 	htmlDependency(
-		'shiny.table.react', '1.0', lazy$wwwdir,
-		script = 'table-bindings.js', stylesheet = 'table-style.css'),
-	htmlDependency(
 		'react', '16.0.0', file.path(lazy$wwwdir, 'react-16.0.0'),
-		script = sprintf('react%s.%s.js', c('', '-dom'), if (dev) 'development' else 'production.min'))
+		script = sprintf('react%s.%s.js', c('', '-dom'), if (dev) 'development' else 'production.min')),
+	htmlDependency(
+		'shiny.table.react', '1.0', lazy$wwwdir,
+		script = 'table-bindings.js', stylesheet = 'table-style.css')
 )

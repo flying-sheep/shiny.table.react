@@ -1,72 +1,95 @@
-(() => {
+(function() {
 
-function updateChooser(chooser) {
-	chooser = $(chooser);
-	const left = chooser.find('select.left');
-	const right = chooser.find('select.right');
-	const leftArrow = chooser.find('.left-arrow');
-	const rightArrow = chooser.find('.right-arrow');
+const dev = true
 
-	const canMoveTo = (left.val() || []).length > 0;
-	const canMoveFrom = (right.val() || []).length > 0;
+const get_empty_state = () => ({
+	selected: [],
+	columns:  {},
+	callback: null,
+	error:    null,
+})
 
-	leftArrow.toggleClass('muted', !canMoveFrom);
-	rightArrow.toggleClass('muted', !canMoveTo);
+class Table extends React.Component {
+	constructor() {
+		super()
+		this.state = get_empty_state()
+	}
+
+	componentDidCatch(error, info) {
+		this.setState({error: `${error.toString()}\n${info.componentStack}`})
+	}
+	
+	shouldComponentUpdate(nextProps, nextState) {
+		const {columns, error} = nextState
+
+		if (dev && !error) {
+			const lengths = Object.entries(columns)
+				.map(([header, column]) => ({header, l: column.length}))
+				.reduce((lengths, {header, l}) => {
+					lengths[l] = l in lengths ? [...lengths[l], header] : [header]
+					return lengths
+				}, {})
+			if (Object.keys(lengths).length > 1) {
+				const err = new Error(`Ragged data passed! Encountered column lengths:\n${
+					Object.entries(lengths).map(([l, headers]) => `${l}: ${headers.join(', ')}`).join('\n')
+				}`)
+				this.setState({error: `${err.toString()}\n${err.stack}`})
+			}
+		}
+
+		return true
+	}
+
+	render() {
+		const {columns, error} = this.state
+
+		if (error) return React.createElement('pre', {className: 'error'}, error)
+
+		const cols = Object.values(columns)
+		const ncol = cols.length
+		const nrow = (cols[0] || []).length  // raggedness checked in shouldComponentUpdate
+		return React.createElement('table', { className: 'react-table' },
+			React.createElement('thead', null,
+				React.createElement('tr', null, Object.keys(columns).map(
+					header => React.createElement('th', {key: header}, header)
+				)),
+			),
+			React.createElement('tbody', null, Array(nrow).fill(null).map(
+				(_, r) => React.createElement('tr', null, Array(ncol).fill(null).map(
+					(_, c) => React.createElement('td', null, cols[c][r]),
+				)),
+			)),
+		)
+	}
 }
 
-function move(chooser, source, dest_sel) {
-	chooser = $(chooser)
-	const selected = chooser.find(source).children('option:selected')
-	const dest = chooser.find(dest_sel)
-	dest.children('option:selected').each((i, e) => e.selected = false)
-	dest.append(selected)
-	updateChooser(chooser)
-	chooser.trigger('change')
-}
+Shiny.addCustomMessageHandler('update-table-react', ({id, ...state}) => {
+	document.getElementById(id).component.setState(state)
+})
 
-const binding = new Shiny.InputBinding
-$.extend(binding, {
-	find(scope) { return $(scope).find('.chooser') },
-
-	initialize(el) { updateChooser(el) },
-
-	getValue(el) {
-	  return {
-	    left:  $.makeArray($(el).find('select.left option') .map((i, e) => e.value)),
-	    right: $.makeArray($(el).find('select.right option').map((i, e) => e.value)),
-	  }
+const binding = Object.assign(new Shiny.InputBinding, {
+	find(scope) {
+		return document.querySelectorAll('.react-table-container')
 	},
 
-	setValue(el, value) {
-	  // TODO: implement
+	initialize(el) {
+		el.component = ReactDOM.render(React.createElement(Table), el)
 	},
 
 	subscribe(el, callback) {
-		$(el).on('change.chooserBinding', e => callback())
-
-		$(el).find('select').on('change', () => {
-		  updateChooser($(el))
-		})
-
-		$(el).find('.right-arrow').on('click', () => {
-		  move($(el), '.left', '.right')
-		})
-
-		$(el).find('.left-arrow').on('click', () => {
-		  move($(el), '.right', '.left')
-		})
-
-		$(el).find('select.left').on('dblclick', () => {
-		  move($(el), '.left', '.right')
-		})
-
-		$(el).find('select.right').on('dblclick', () => {
-		  move($(el), '.right', '.left')
-		})
+		el.component.setState({callback})
 	},
 
 	unsubscribe(el) {
-	  $(el).off('.chooserBinding')
+		el.component.setState({callback: null})
+	},
+
+	getValue(el) {
+		return el.component.state.selected
+	},
+
+	setValue(el, value) {
+		el.component.setState({ selected: value })
 	},
 
 	getType() { return 'shiny.table.react' },
