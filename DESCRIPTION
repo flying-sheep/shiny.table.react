@@ -1,0 +1,14 @@
+Package: shiny.table.react
+Version: 1.0
+Title: Shiny Table Widget
+Date: 2017-11-09
+Description: A table widget that is fast thanks to React.js
+Authors@R: c(person('Philipp', 'Angerer', role = c('aut', 'cre', 'cph'),
+                    email ='phil.angerer@gmail.com'))
+Depends: R (>= 3.1.0)
+License: GPL (>=3.0)
+Type: Package
+Tags: javascript custom-input
+DisplayMode: Normal
+Encoding: UTF-8
+RoxygenNote: 6.0.1.9000
