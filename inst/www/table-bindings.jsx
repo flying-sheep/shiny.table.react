@@ -14,7 +14,7 @@ class Table extends React.Component {
 		super()
 		this.state = get_empty_state()
 	}
-
+	
 	componentDidCatch(error, info) {
 		this.setState({error: `${error.toString()}\n${info.componentStack}`})
 	}
@@ -39,7 +39,7 @@ class Table extends React.Component {
 
 		return true
 	}
-
+	
 	render() {
 		const {columns, error} = this.state
 
