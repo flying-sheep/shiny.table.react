@@ -41,7 +41,7 @@ class Table extends React.Component {
 	}
 	
 	render() {
-		const {columns, error} = this.state
+		const {columns, error, callback, selected} = this.state
 
 		if (error) return <pre className="error">{error}</pre>
 
@@ -56,12 +56,24 @@ class Table extends React.Component {
 					)}</tr>
 				</thead>
 				<tbody>{Array(nrow).fill(null).map((_, r) =>
-					<tr>{Array(ncol).fill(null).map((_, c) =>
-						<td>{cols[c][r]}</td>
+					<tr key={r}
+						className={selected.includes(r) ? 'selected' : null}
+						onClick={() => this.select_toggle(r)}
+					>{Array(ncol).fill(null).map((_, c) =>
+						<td key={c}>{cols[c][r]}</td>
 					)}</tr>
 				)}</tbody>
 			</table>
 		)
+	}
+	
+	select_toggle(row) {
+		const {selected, callback} = this.state
+		const row_selected = selected.includes(row)
+		const selected_new = row_selected
+			? selected.filter(r => r !== row)
+			: [...selected, row]
+		this.setState({selected: selected_new}, () => callback(selected_new))
 	}
 }
 

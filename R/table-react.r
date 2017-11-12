@@ -4,7 +4,7 @@
 table_react <- function(id) {
 	register_handler()
 
-  attachDependencies(div(id = id, class = 'react-table-container'), deps())
+	attachDependencies(div(id = id, class = 'react-table-container'), deps())
 }
 
 #' @importFrom purrr compact
@@ -19,12 +19,7 @@ table_react_update <- function(session, id, columns = NULL, selected = NULL) {
 }
 
 register_handler <- function() {
-	registerInputHandler('shiny.table.react', function(data, ...) {
-		if (is.null(data))
-			NULL
-		else
-			data
-	}, force = TRUE)
+	registerInputHandler('shiny.table.react', function(data, ...) as.integer(data), force = TRUE)
 }
 
 deps <- function(dev = TRUE) list(

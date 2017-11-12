@@ -10,7 +10,7 @@ run_table_example <- function(...) {
 	server <- function(input, output, session) {
 		table_react_update(session, 'mytable', USArrests)
 		table_react_update(session, 'broken-table', list(a = 1:3, b = 1:5, c = 2:4))
-		output$selection <- renderPrint(input$mychooser)
+		output$selection <- renderPrint(input$mytable)
 	}
 
 	runApp(list(ui = ui, server = server), ...)
