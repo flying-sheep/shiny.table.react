@@ -43,22 +43,24 @@ class Table extends React.Component {
 	render() {
 		const {columns, error} = this.state
 
-		if (error) return React.createElement('pre', {className: 'error'}, error)
+		if (error) return <pre className="error">{error}</pre>
 
 		const cols = Object.values(columns)
 		const ncol = cols.length
 		const nrow = (cols[0] || []).length  // raggedness checked in shouldComponentUpdate
-		return React.createElement('table', { className: 'react-table' },
-			React.createElement('thead', null,
-				React.createElement('tr', null, Object.keys(columns).map(
-					header => React.createElement('th', {key: header}, header)
-				)),
-			),
-			React.createElement('tbody', null, Array(nrow).fill(null).map(
-				(_, r) => React.createElement('tr', null, Array(ncol).fill(null).map(
-					(_, c) => React.createElement('td', null, cols[c][r]),
-				)),
-			)),
+		return (
+			<table className="react-table">
+				<thead>
+					<tr>{Object.keys(columns).map(header =>
+						<th key={header}>{header}</th>
+					)}</tr>
+				</thead>
+				<tbody>{Array(nrow).fill(null).map((_, r) =>
+					<tr>{Array(ncol).fill(null).map((_, c) =>
+						<td>{cols[c][r]}</td>
+					)}</tr>
+				)}</tbody>
+			</table>
 		)
 	}
 }
@@ -73,7 +75,7 @@ const binding = Object.assign(new Shiny.InputBinding, {
 	},
 
 	initialize(el) {
-		el.component = ReactDOM.render(React.createElement(Table), el)
+		el.component = ReactDOM.render(<Table/>, el)
 	},
 
 	subscribe(el, callback) {
