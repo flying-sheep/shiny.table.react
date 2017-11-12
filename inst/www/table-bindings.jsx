@@ -5,6 +5,8 @@ const dev = true
 const get_empty_state = () => ({
 	selected: [],
 	columns:  {},
+	page:     0,
+	n_pages:  1,
 	callback: null,
 	error:    null,
 })
@@ -19,37 +21,16 @@ class Table extends React.Component {
 		this.setState({error: `${error.toString()}\n${info.componentStack}`})
 	}
 	
-	shouldComponentUpdate(nextProps, nextState) {
-		const {columns, error} = nextState
-
-		if (dev && !error) {
-			const lengths = Object.entries(columns)
-				.map(([header, column]) => ({header, l: column.length}))
-				.reduce((lengths, {header, l}) => {
-					lengths[l] = l in lengths ? [...lengths[l], header] : [header]
-					return lengths
-				}, {})
-			if (Object.keys(lengths).length > 1) {
-				const err = new Error(`Ragged data passed! Encountered column lengths:\n${
-					Object.entries(lengths).map(([l, headers]) => `${l}: ${headers.join(', ')}`).join('\n')
-				}`)
-				this.setState({error: `${err.toString()}\n${err.stack}`})
-			}
-		}
-
-		return true
-	}
-	
 	render() {
-		const {columns, error, callback, selected} = this.state
+		const {columns, page, n_pages, error, callback, selected} = this.state
 
 		if (error) return <pre className="error">{error}</pre>
 
 		const cols = Object.values(columns)
 		const ncol = cols.length
 		const nrow = (cols[0] || []).length  // raggedness checked in shouldComponentUpdate
-		return (
-			<table className="react-table">
+		return [
+			<table className="react-table" key="table">
 				<thead>
 					<tr>{Object.keys(columns).map(header =>
 						<th key={header}>{header}</th>
@@ -57,14 +38,17 @@ class Table extends React.Component {
 				</thead>
 				<tbody>{Array(nrow).fill(null).map((_, r) =>
 					<tr key={r}
-						className={selected.includes(r) ? 'selected' : null}
-						onClick={() => this.select_toggle(r)}
+						className={selected.includes(r - page) ? 'selected' : null}
+						onClick={() => this.select_toggle(r - page)}
 					>{Array(ncol).fill(null).map((_, c) =>
 						<td key={c}>{cols[c][r]}</td>
 					)}</tr>
 				)}</tbody>
-			</table>
-		)
+			</table>,
+			<div key="pages">{Array(n_pages).fill(null).map((_, p) =>
+				<button key={p} disabled={p === page}>{p + 1}</button>
+			)}</div>,
+		]
 	}
 	
 	select_toggle(row) {
