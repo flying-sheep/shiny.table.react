@@ -1,7 +1,8 @@
-#' @importFrom shiny runApp fluidPage verbatimTextOutput renderPrint
+#' @importFrom shiny runApp fluidPage selectInput verbatimTextOutput renderPrint
 #' @export
 run_table_example <- function(...) {
 	ui <- fluidPage(
+		selectInput('dataselect', 'Dataset', c('USArrests', 'iris')),
 		table_react('mytable'),
 		verbatimTextOutput('selection'),
 		table_react('broken-table'),
@@ -9,7 +10,9 @@ run_table_example <- function(...) {
 	)
 
 	server <- function(input, output, session) {
-		table_react_update(session, 'mytable', USArrests)
+		observe({
+			table_react_update(session, 'mytable', get(input$dataselect))
+		})
 		table_react_update(session, 'broken-table', list(a = 1:3, b = 1:5, c = 2:4))
 		output$selection <- renderPrint(input$mytable)
 	}
