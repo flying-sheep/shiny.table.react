@@ -9,26 +9,22 @@ table_react <- function(id) {
 
 #' @importFrom purrr compact
 #' @export
-table_react_select <- function(session, id, selected = NULL) {
+table_react_select <- function(session, id, select_group = NULL) {
 	session$sendInputMessage(id, compact(list(
-		value = selected_to_js(selected))))
+		value = select_group)))
 }
 
 #' @importFrom shiny validate need
-table_react_update <- function(session, id, data = NULL, selected = NULL, page = NULL, page_size = NULL) {
+table_react_update <- function(session, id, data = NULL, select_group = NULL, page = NULL, page_size = NULL) {
 	if (!can_convert_to_df(data)) {
 		table_send_error(session, id, paste('Error: Ragged array:\n', paste0(capture.output(str(data)), collapse = '\n')))
-		return()
-	}
-	if (!is.null(selected) && !is.integer(selected)) {
-		table_send_error(session, id, 'Error: Can only select row indices by now')
 		return()
 	}
 	
 	session$sendCustomMessage(type = 'update-table-react', compact(list(
 		id = id,
 		columns = data %&&% as.data.frame(data),
-		selected = selected,
+		select_group = select_group,
 		page = page %&&% page - 1L,
 		page_size = page_size)))
 }
@@ -52,7 +48,7 @@ page_to_js <- function(page) {
 
 register_handler <- function() {
 	registerInputHandler('shiny.table.react', function(data, ...) {
-		as.integer(data) + 1L
+		vapply(data, function(s) if (is.null(s)) NA_integer_ else s, integer(1L)) + 1L
 	}, force = TRUE)
 }
 

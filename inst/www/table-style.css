@@ -1,16 +1,26 @@
 .react-table {
 	border-collapse: collapse;
 }
-.react-table tbody tr:not(.selected):hover {
-	background-color: rgba(20, 20, 255, .2);
-}
-.react-table tbody tr.selected {
-	background-color: rgba(20, 20, 255, .4);
-}
 .react-table th,
 .react-table td {
 	padding: 5px;
 }
+
+.react-table tbody tr:not(.selected):hover {
+	background-color: rgba(20, 20, 255, .2);
+}
+.react-table tbody tr.selected {
+	background-color: rgba(0, 0, 0, 0.4);
+}
+.react-table tbody tr.selected.select-0 { background-color: rgba(255, 114, 20, 0.4) }
+.react-table tbody tr.selected.select-1 { background-color: rgba(255, 192, 20, 0.4) }
+.react-table tbody tr.selected.select-2 { background-color: rgba(47, 255, 20, 0.4) }
+.react-table tbody tr.selected.select-3 { background-color: rgba(20, 255, 243, 0.4) }
+.react-table tbody tr.selected.select-4 { background-color: rgba(20, 43, 255, 0.4) }
+.react-table tbody tr.selected.select-5 { background-color: rgba(130, 20, 255, 0.4) }
+.react-table tbody tr.selected.select-6 { background-color: rgba(228, 20, 255, 0.4) }
+.react-table tbody tr.selected.select-7 { background-color: rgba(255, 20, 137, 0.4) }
+.react-table tbody tr.selected.select-8 { background-color: rgba(255, 20, 20, 0.4) }
 
 .paginator button,
 .paginator select {

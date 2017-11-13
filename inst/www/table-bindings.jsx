@@ -3,12 +3,12 @@
 const dev = true
 
 const get_empty_state = () => ({
-	selected:  [],
-	columns:   {},
-	page:      0,
-	page_size: 10,
-	callback:  null,
-	error:     null,
+	select_group: [],
+	columns:      {},
+	page:         0,
+	page_size:    10,
+	callback:     null,
+	error:        null,
 })
 
 const Paginator = ({onSelectPage, onSelectSize, n_pages, page}) => (
@@ -32,7 +32,7 @@ const Paginator = ({onSelectPage, onSelectSize, n_pages, page}) => (
 	</div>
 )
 
-const Table = ({onSelectRow, columns, page, page_size, selected}) => {
+const Table = ({onSelectRow, columns, page, page_size, select_group}) => {
 	const cols = Object.values(columns)
 	const {ncol, nrow} = dims(columns)
 	if (nrow === 0 || ncol === 0)
@@ -51,10 +51,12 @@ const Table = ({onSelectRow, columns, page, page_size, selected}) => {
 			<tbody>
 			{Array(this_page_size).fill(null).map((_, r) => {
 				const row = page * page_size + r
+				const group = select_group[row]
+				const next_group = group === null ? 0 : (group+1 < 9 ? group+1 : null)
 				return (
 					<tr key={r}
-						className={selected.includes(row) ? 'selected' : null}
-						onClick={() => onSelectRow(row)}
+						className={group === null ? null : `selected select-${group}`}
+						onClick={() => onSelectRow(row, next_group)}
 					>{Array(ncol).fill(null).map((_, c) =>
 						<td key={c}>{cols[c][row]}</td>
 					)}</tr>
@@ -83,40 +85,45 @@ class TableReact extends React.Component {
 	}
 	
 	render() {
-		const {columns, page, page_size, error, callback, selected} = this.state
+		const {columns, page, page_size, error, callback, select_group} = this.state
 		if (error) return <pre className="error">{error}</pre>
 		
 		const {nrow} = dims(columns)
 		const n_pages = Math.ceil(nrow / page_size)
 		
-		const paginator =
-			<Paginator key="pages"
+		const paginator = (key) =>
+			<Paginator key={key}
 				onSelectPage={page => this.setState({page})}
 				onSelectSize={size => this.setState({page_size: size})}
 				n_pages={n_pages}
 				page={page}
 			/>
 		return [
-			paginator,
+			paginator('pages-top'),
 			<Table key="table"
-				onSelectRow={row => this.select_toggle(row)}
+				onSelectRow={(row, group) => this.set_select_group(row, group)}
 				columns={columns}
 				page={page}
 				page_size={page_size}
-				selected={selected}
+				select_group={select_group}
 			/>,
-			paginator,
+			paginator('pages-bottom'),
 		]
 	}
 	
-	setState(new_state, callback) {
+	setState(new_state, finished_cb) {
 		if (new_state.page !== undefined || new_state.page_size !== undefined || new_state.columns !== undefined) {
 			new_state.page = this.get_valid_page(new_state.page, new_state.page_size, new_state.columns)
 		}
-		if (new_state.selected !== undefined || new_state.columns !== undefined) {
-			new_state.selected = this.get_valid_selected(new_state.selected, new_state.columns)
+		let registered_cb = () => {}
+		if (new_state.select_group !== undefined || new_state.columns !== undefined) {
+			new_state.select_group = this.get_valid_select_group(new_state.select_group, new_state.columns)
+			registered_cb = new_state.callback || this.state.callback || (() => {})
 		}
-		super.setState(new_state, callback)
+		super.setState(new_state, () => {
+			registered_cb(new_state.select_group)
+			if (finished_cb) finished_cb()
+		})
 	}
 	
 	get_valid_page(page = this.state.page, page_size = this.state.page_size, columns = this.state.columns) {
@@ -125,18 +132,18 @@ class TableReact extends React.Component {
 		return (page * page_size >= nrow) ? n_pages - 1 : page
 	}
 	
-	get_valid_selected(selected = this.state.selected, columns = this.state.columns) {
+	get_valid_select_group(select_group = this.state.select_group, columns = this.state.columns) {
 		const {nrow} = dims(columns)
-		return selected.filter(s => s < nrow)
+		return nrow < select_group.length
+			? select_group.slice(nrow)
+			: select_group.concat(new Array(nrow - select_group.length).fill(null))
 	}
 	
-	select_toggle(row) {
-		const {selected, callback} = this.state
-		const row_selected = selected.includes(row)
-		const selected_new = row_selected
-			? selected.filter(r => r !== row)
-			: [...selected, row]
-		this.setState({selected: selected_new}, () => callback(selected_new))
+	set_select_group(row, group) {
+		const {select_group, callback} = this.state
+		const select_group_new = select_group.slice()
+		select_group_new[row] = group
+		this.setState({select_group: select_group_new})
 	}
 }
 
@@ -158,10 +165,10 @@ const binding = Object.assign(new Shiny.InputBinding, {
 		el.component.setState({callback: null})
 	},
 	getValue(el) {
-		return el.component.state.selected
+		return el.component.state.select_group
 	},
 	setValue(el, value) {
-		el.component.setState({selected: value})
+		el.component.setState({select_group: value})
 	},
 	getType() {
 		return 'shiny.table.react'
