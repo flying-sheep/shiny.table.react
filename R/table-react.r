@@ -10,16 +10,17 @@
 #'                      \code{\link[base]{NA}} for unselected, and numbers for selected rows.
 #' @param page          Select a page for pagination.
 #' @param page_size     Set a page size for pagination.
+#' @param dev           Load React in development mode?
 #'
 #' @importFrom htmltools singleton tagList tags HTML div attachDependencies htmlDependency
 #' @importFrom shiny icon registerInputHandler
 #'
 #' @name table_react
 #' @export
-table_react <- function(id) {
+table_react <- function(id, dev = FALSE) {
 	register_handler()
 
-	attachDependencies(div(id = id, class = 'react-table-container'), deps())
+	attachDependencies(div(id = id, class = 'react-table-container'), deps(dev))
 }
 
 
