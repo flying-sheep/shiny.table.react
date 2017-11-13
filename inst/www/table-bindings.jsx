@@ -15,9 +15,9 @@ const get_empty_state = () => ({
 })
 
 const SimpleSelect = ({onSelect, values, selected_value, ...props}) =>
-	<select {...props} onChange={e => onSelect(+e.target.value)}>
+	<select {...props} onChange={e => onSelect(+e.target.value)} value={selected_value}>
 	{values.map(v =>
-		<option key={v} value={v} selected={v === selected_value}>{v}</option>
+		<option key={v} value={v}>{v}</option>
 	)}
 	</select>
 
@@ -117,6 +117,7 @@ class TableReact extends React.Component {
 			<Paginator key={key}
 				onSelectPage={page => this.setState({page})}
 				onSelectSize={size => this.setState({page_size: size})}
+				onSelectNGroups={n_groups => this.setState({n_groups})}
 				n_pages={n_pages}
 				page={page}
 				page_size={page_size}
