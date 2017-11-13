@@ -11,22 +11,26 @@ const get_empty_state = () => ({
 	error:     null,
 })
 
-const Paginator = ({onSelectPage, onSelectSize, n_pages, page}) => [
-	...Array(n_pages).fill(null).map((_, p) =>
-		<button key={p}
-			disabled={p === page}
-			onClick={() => onSelectPage(p)}
-		>{p + 1}</button>
-	),
-	<select key="select"
-		onChange={e => onSelectSize(+e.target.value)}
-		style={{display: n_pages === 0 ? 'none' : null}}
-	>
-	{[10, 100, 500].map(size =>
-		<option key={size} value={size}>{size}</option>
-	)}
-	</select>,
-]
+const Paginator = ({onSelectPage, onSelectSize, n_pages, page}) => (
+	<div className="paginator">
+		<select key="select"
+			className="page-size"
+			onChange={e => onSelectSize(+e.target.value)}
+			style={{display: n_pages === 0 ? 'none' : null}}
+		>
+		{[10, 100, 500].map(size =>
+			<option key={size} value={size}>{size}</option>
+		)}
+		</select>
+		<div key="pages" className="pages">
+		{Array(n_pages).fill(null).map((_, p) =>
+			<button key={p}
+				disabled={p === page}
+				onClick={() => onSelectPage(p)}
+			>{p + 1}</button>
+		)}</div>
+	</div>
+)
 
 const Table = ({onSelectRow, columns, page, page_size, selected}) => {
 	const cols = Object.values(columns)
@@ -85,7 +89,15 @@ class TableReact extends React.Component {
 		const {nrow} = dims(columns)
 		const n_pages = Math.ceil(nrow / page_size)
 		
+		const paginator =
+			<Paginator key="pages"
+				onSelectPage={page => this.setState({page})}
+				onSelectSize={size => this.setState({page_size: size})}
+				n_pages={n_pages}
+				page={page}
+			/>
 		return [
+			paginator,
 			<Table key="table"
 				onSelectRow={row => this.select_toggle(row)}
 				columns={columns}
@@ -93,12 +105,7 @@ class TableReact extends React.Component {
 				page_size={page_size}
 				selected={selected}
 			/>,
-			<Paginator key="pages"
-				onSelectPage={page => this.setState({page})}
-				onSelectSize={size => this.setState({page_size: size})}
-				n_pages={n_pages}
-				page={page}
-			/>,
+			paginator,
 		]
 	}
 	
