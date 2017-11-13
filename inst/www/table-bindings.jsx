@@ -20,7 +20,7 @@ const Paginator = ({onSelectPage, onSelectSize, n_pages, page}) => [
 	),
 	<select key="select" onChange={e => onSelectSize(+e.target.value)}>
 	{[10, 100, 500].map(size =>
-		<option value={size}>{size}</option>
+		<option key={size} value={size}>{size}</option>
 	)}
 	</select>,
 ]
@@ -28,6 +28,9 @@ const Paginator = ({onSelectPage, onSelectSize, n_pages, page}) => [
 const Table = ({onSelectRow, columns, page, page_size, selected}) => {
 	const cols = Object.values(columns)
 	const {ncol, nrow} = dims(columns)
+	if (nrow === 0 || ncol === 0)
+		return <div className="react-table">Empty table: {nrow}&times;{ncol}</div>
+
 	const this_page_size = Math.min(page_size, nrow - page * page_size)
 	return (
 		<table className="react-table">
@@ -96,14 +99,14 @@ class TableReact extends React.Component {
 		]
 	}
 	
-	setState(new_state) {
+	setState(new_state, callback) {
 		if (new_state.page !== undefined || new_state.page_size !== undefined || new_state.columns !== undefined) {
 			new_state.page = this.get_valid_page(new_state.page, new_state.page_size, new_state.columns)
 		}
 		if (new_state.selected !== undefined || new_state.columns !== undefined) {
 			new_state.selected = this.get_valid_selected(new_state.selected, new_state.columns)
 		}
-		super.setState(new_state)
+		super.setState(new_state, callback)
 	}
 	
 	get_valid_page(page = this.state.page, page_size = this.state.page_size, columns = this.state.columns) {
@@ -135,28 +138,24 @@ const binding = Object.assign(new Shiny.InputBinding, {
 	find(scope) {
 		return document.querySelectorAll('.react-table-container')
 	},
-
 	initialize(el) {
 		el.component = ReactDOM.render(<TableReact/>, el)
 	},
-
 	subscribe(el, callback) {
 		el.component.setState({callback})
 	},
-
 	unsubscribe(el) {
 		el.component.setState({callback: null})
 	},
-
 	getValue(el) {
 		return el.component.state.selected
 	},
-
 	setValue(el, value) {
-		el.component.setState({ selected: value })
+		el.component.setState({selected: value})
 	},
-
-	getType() { return 'shiny.table.react' },
+	getType() {
+		return 'shiny.table.react'
+	},
 })
 
 Shiny.inputBindings.register(binding, 'shiny.table.react')
