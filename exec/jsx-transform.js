@@ -1,8 +1,10 @@
 #!/usr/bin/node
 
-const inline_sourcemap_prefix = '//# sourceMappingURL=data:application/json;base64,'
+const sourcemap_prefix = '//# sourceMappingURL='
+const sourcemap_prefix_inline = `${sourcemap_prefix}data:application/json;base64,`
 
 const fs = require('fs')
+const path = require('path')
 const babel = require(`${__dirname}/babel.min`)
 
 function btoa(str) {
@@ -50,11 +52,20 @@ async function main(args) {
 	
 	const in_code = await (in_filename === null ? read_stream(process.stdin) : read_path(in_filename))
 	const { code, map, ast } = babel.transform(in_code, options)
-	const code_and_map = `${code}\n${inline_sourcemap_prefix}${btoa(JSON.stringify(map))}\n`
 	
-	await (out_filename === null
-		? write_stream(process.stdout, code_and_map)
-		: write_path(out_filename, code_and_map))
+	const map_filename = out_filename.replace(/\.js$/, '.map.js')
+	map.sources[0] = path.basename(in_filename)
+	map.file = path.basename(out_filename)
+	const map_string = JSON.stringify(map)
+	
+	if (out_filename === null) {
+		const code_and_map = `${code}\n${sourcemap_prefix_inline}${btoa(map_string)}\n`
+		await write_stream(process.stdout, code_and_map)
+	} else {
+		const code_and_url = `${code}\n${sourcemap_prefix}${path.basename(map_filename)}\n`
+		await write_path(out_filename, code_and_url)
+		await write_path(map_filename, map_string)
+	}
 }
 
 main(process.argv.slice(2))
