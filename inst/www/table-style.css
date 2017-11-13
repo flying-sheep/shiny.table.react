@@ -1,10 +1,10 @@
 .react-table {
 	border-collapse: collapse;
 }
-.react-table tr:not(.selected):hover {
+.react-table tbody tr:not(.selected):hover {
 	background-color: rgba(20, 20, 255, .2);
 }
-.react-table tr.selected {
+.react-table tbody tr.selected {
 	background-color: rgba(20, 20, 255, .4);
 }
 .react-table th,
@@ -12,13 +12,17 @@
 	padding: 5px;
 }
 
+.paginator button,
+.paginator select {
+	color: initial;
+}
+.page-size {
+	float: left;
+}
+
 .error {
 	background-color: rgba(255, 0, 0, .1);
 }
 .error::first-line {
 	color: rgb(255, 20, 20);
-}
-
-.page-size {
-	float: left;
 }
