@@ -1,4 +1,10 @@
-#' @importFrom shiny runApp fluidPage selectInput verbatimTextOutput renderPrint
+#' Run Shiny React Table example
+#'
+#' An example page showing a few use cases and error handling.
+#'
+#' @param ...  Parameters for \code{\link[shiny]{runApp}}.
+#'
+#' @importFrom shiny runApp fluidPage selectInput verbatimTextOutput renderPrint observe
 #' @export
 run_table_example <- function(...) {
 	ui <- fluidPage(
