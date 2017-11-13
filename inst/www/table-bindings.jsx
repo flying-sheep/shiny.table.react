@@ -25,6 +25,36 @@ const Paginator = ({onSelectPage, onSelectSize, n_pages, page}) => [
 	</select>,
 ]
 
+const Table = ({onSelectRow, columns, page, page_size, selected}) => {
+	const cols = Object.values(columns)
+	const {ncol, nrow} = dims(columns)
+	const this_page_size = Math.min(page_size, nrow - page * page_size)
+	return (
+		<table className="react-table">
+			<thead>
+				<tr>
+				{Object.keys(columns).map(header =>
+					<th key={header}>{header}</th>
+				)}
+				</tr>
+			</thead>
+			<tbody>
+			{Array(this_page_size).fill(null).map((_, r) => {
+				const row = page * page_size + r
+				return (
+					<tr key={r}
+						className={selected.includes(row) ? 'selected' : null}
+						onClick={() => onSelectRow(row)}
+					>{Array(ncol).fill(null).map((_, c) =>
+						<td key={c}>{cols[c][row]}</td>
+					)}</tr>
+				)
+			})}
+			</tbody>
+		</table>
+	)
+}
+
 function dims(columns) {
 	const cols = Object.values(columns || {})
 	const ncol = cols.length
@@ -32,7 +62,7 @@ function dims(columns) {
 	return {ncol, nrow}
 }
 
-class Table extends React.Component {
+class TableReact extends React.Component {
 	constructor() {
 		super()
 		this.state = get_empty_state()
@@ -46,35 +76,17 @@ class Table extends React.Component {
 		const {columns, page, page_size, error, callback, selected} = this.state
 		if (error) return <pre className="error">{error}</pre>
 		
-		const cols = Object.values(columns)
-		const {ncol, nrow} = dims(columns)
-		
-		const n_pages = Math.ceil(nrow / page_size)
-		const this_page_size = Math.min(page_size, nrow - page * page_size)
+		const {nrow} = dims(columns)
+		const n_pages = Math.max(1, Math.ceil(nrow / page_size))
 		
 		return [
-			<table className="react-table" key="table">
-				<thead>
-					<tr>
-					{Object.keys(columns).map(header =>
-						<th key={header}>{header}</th>
-					)}
-					</tr>
-				</thead>
-				<tbody>
-				{Array(this_page_size).fill(null).map((_, r) => {
-					const row = page * page_size + r
-					return (
-						<tr key={r}
-							className={selected.includes(row) ? 'selected' : null}
-							onClick={() => this.select_toggle(row)}
-						>{Array(ncol).fill(null).map((_, c) =>
-							<td key={c}>{cols[c][row]}</td>
-						)}</tr>
-					)
-				})}
-				</tbody>
-			</table>,
+			<Table key="table"
+				onSelectRow={row => this.select_toggle(row)}
+				columns={columns}
+				page={page}
+				page_size={page_size}
+				selected={selected}
+			/>,
 			<Paginator key="pages"
 				onSelectPage={page => this.setState({page})}
 				onSelectSize={size => this.setState({page_size: size})}
@@ -125,7 +137,7 @@ const binding = Object.assign(new Shiny.InputBinding, {
 	},
 
 	initialize(el) {
-		el.component = ReactDOM.render(<Table/>, el)
+		el.component = ReactDOM.render(<TableReact/>, el)
 	},
 
 	subscribe(el, callback) {

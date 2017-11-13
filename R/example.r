@@ -4,7 +4,8 @@ run_table_example <- function(...) {
 	ui <- fluidPage(
 		table_react('mytable'),
 		verbatimTextOutput('selection'),
-		table_react('broken-table')
+		table_react('broken-table'),
+		table_react('empty-table')
 	)
 
 	server <- function(input, output, session) {
