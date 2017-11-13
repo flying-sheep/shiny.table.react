@@ -11,7 +11,7 @@ const get_empty_state = () => ({
 	error:        null,
 })
 
-const Paginator = ({onSelectPage, onSelectSize, n_pages, page}) => (
+const Paginator = ({onSelectPage, onSelectSize, n_pages, page, page_size}) => (
 	<div className="paginator">
 		<select key="select"
 			className="page-size"
@@ -19,7 +19,11 @@ const Paginator = ({onSelectPage, onSelectSize, n_pages, page}) => (
 			style={{display: n_pages === 0 ? 'none' : null}}
 		>
 		{[10, 100, 500].map(size =>
-			<option key={size} value={size}>{size}</option>
+			<option
+				key={size}
+				value={size}
+				selected={size === page_size}
+			>{size}</option>
 		)}
 		</select>
 		<div key="pages" className="pages">
@@ -97,7 +101,8 @@ class TableReact extends React.Component {
 				onSelectSize={size => this.setState({page_size: size})}
 				n_pages={n_pages}
 				page={page}
-			/>
+				page_size={page_size}
+				/>
 		return [
 			paginator('pages-top'),
 			<Table key="table"
