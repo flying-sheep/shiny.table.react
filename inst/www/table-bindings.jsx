@@ -6,7 +6,7 @@ const get_empty_state = () => ({
 	select_group: [],
 	columns:      {},
 	page:         0,
-	page_size:    10,
+	page_size:    100,
 	callback:     null,
 	error:        null,
 })
