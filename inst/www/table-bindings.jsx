@@ -3,13 +3,34 @@
 const dev = true
 
 const get_empty_state = () => ({
-	selected: [],
-	columns:  {},
-	page:     0,
-	n_pages:  1,
-	callback: null,
-	error:    null,
+	selected:  [],
+	columns:   {},
+	page:      0,
+	page_size: 10,
+	callback:  null,
+	error:     null,
 })
+
+const Paginator = ({onSelectPage, onSelectSize, n_pages, page}) => [
+	...Array(n_pages).fill(null).map((_, p) =>
+		<button key={p}
+			disabled={p === page}
+			onClick={() => onSelectPage(p)}
+		>{p + 1}</button>
+	),
+	<select key="select" onChange={e => onSelectSize(+e.target.value)}>
+	{[10, 100, 500].map(size =>
+		<option value={size}>{size}</option>
+	)}
+	</select>,
+]
+
+function dims(columns) {
+	const cols = Object.values(columns || {})
+	const ncol = cols.length
+	const nrow = (cols[0] || []).length  // raggedness checked in R
+	return {ncol, nrow}
+}
 
 class Table extends React.Component {
 	constructor() {
@@ -22,33 +43,66 @@ class Table extends React.Component {
 	}
 	
 	render() {
-		const {columns, page, n_pages, error, callback, selected} = this.state
-
+		const {columns, page, page_size, error, callback, selected} = this.state
 		if (error) return <pre className="error">{error}</pre>
-
+		
 		const cols = Object.values(columns)
-		const ncol = cols.length
-		const nrow = (cols[0] || []).length  // raggedness checked in shouldComponentUpdate
+		const {ncol, nrow} = dims(columns)
+		
+		const n_pages = Math.ceil(nrow / page_size)
+		const this_page_size = Math.min(page_size, nrow - page * page_size)
+		
 		return [
 			<table className="react-table" key="table">
 				<thead>
-					<tr>{Object.keys(columns).map(header =>
+					<tr>
+					{Object.keys(columns).map(header =>
 						<th key={header}>{header}</th>
-					)}</tr>
+					)}
+					</tr>
 				</thead>
-				<tbody>{Array(nrow).fill(null).map((_, r) =>
-					<tr key={r}
-						className={selected.includes(r - page) ? 'selected' : null}
-						onClick={() => this.select_toggle(r - page)}
-					>{Array(ncol).fill(null).map((_, c) =>
-						<td key={c}>{cols[c][r]}</td>
-					)}</tr>
-				)}</tbody>
+				<tbody>
+				{Array(this_page_size).fill(null).map((_, r) => {
+					const row = page * page_size + r
+					return (
+						<tr key={r}
+							className={selected.includes(row) ? 'selected' : null}
+							onClick={() => this.select_toggle(row)}
+						>{Array(ncol).fill(null).map((_, c) =>
+							<td key={c}>{cols[c][row]}</td>
+						)}</tr>
+					)
+				})}
+				</tbody>
 			</table>,
-			<div key="pages">{Array(n_pages).fill(null).map((_, p) =>
-				<button key={p} disabled={p === page}>{p + 1}</button>
-			)}</div>,
+			<Paginator key="pages"
+				onSelectPage={page => this.setState({page})}
+				onSelectSize={size => this.setState({page_size: size})}
+				n_pages={n_pages}
+				page={page}
+			/>,
 		]
+	}
+	
+	setState(new_state) {
+		if (new_state.page !== undefined || new_state.page_size !== undefined || new_state.columns !== undefined) {
+			new_state.page = this.get_valid_page(new_state.page, new_state.page_size, new_state.columns)
+		}
+		if (new_state.selected !== undefined || new_state.columns !== undefined) {
+			new_state.selected = this.get_valid_selected(new_state.selected, new_state.columns)
+		}
+		super.setState(new_state)
+	}
+	
+	get_valid_page(page = this.state.page, page_size = this.state.page_size, columns = this.state.columns) {
+		const {nrow} = dims(columns)
+		const n_pages = Math.ceil(nrow / page_size)
+		return (page * page_size >= nrow) ? n_pages - 1 : page
+	}
+	
+	get_valid_selected(selected = this.state.selected, columns = this.state.columns) {
+		const {nrow} = dims(columns)
+		return selected.filter(s => s < nrow)
 	}
 	
 	select_toggle(row) {

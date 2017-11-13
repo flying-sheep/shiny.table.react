@@ -14,45 +14,35 @@ table_react_select <- function(session, id, selected = NULL) {
 		value = selected_to_js(selected))))
 }
 
-PAGE_LENGTH = 10L
-
 #' @importFrom shiny validate need
-table_react_update <- function(session, id, data = NULL, selected = NULL, page = NULL) {
+table_react_update <- function(session, id, data = NULL, selected = NULL, page = NULL, page_size = NULL) {
 	if (!can_convert_to_df(data)) {
-		session$sendCustomMessage(type = 'update-table-react', list(
-			id = id, error = paste('Ragged array:\n', paste0(capture.output(str(data)), collapse = '\n'))))
+		table_send_error(session, id, paste('Error: Ragged array:\n', paste0(capture.output(str(data)), collapse = '\n')))
+		return()
+	}
+	if (!is.null(selected) && !is.integer(selected)) {
+		table_send_error(session, id, 'Error: Can only select row indices by now')
 		return()
 	}
 	
-	page_idx <- if (is.null(page)) NULL else page - 1L
-	
-	page_start <- if (is.null(page_idx)) 0L else page_idx * PAGE_LENGTH  # before!
-	rows <- seq.int(
-		from = page_start + 1L,
-		to = min(page_start + PAGE_LENGTH, nrow(data)))
-	
-	columns <-
-		if (!is.null(nrow(data))) as.data.frame(data[rows, , drop = FALSE])
-		else as.data.frame(data)[rows, , drop = FALSE]
-	
 	session$sendCustomMessage(type = 'update-table-react', compact(list(
 		id = id,
-		columns = columns,
-		selected = selected_to_js(selected),
-		page = page_idx,
-		n_pages = ceiling(nrow(data) / PAGE_LENGTH))))
+		columns = data %&&% as.data.frame(data),
+		selected = selected,
+		page = page %&&% page - 1L,
+		page_size = page_size)))
+}
+
+table_send_error <- function(session, id, msg) {
+	session$sendCustomMessage(
+		type = 'update-table-react',
+		list(id = id, error = msg))
 }
 
 can_convert_to_df <- function(thing) {
 	if (!is.list(thing)) return(TRUE)  # TODO
 	first_length <- length(thing[[1L]])
 	all(sapply(thing, function(t) length(t) == first_length))
-}
-
-selected_to_js <- function(selected) {
-	if (is.null(selected)) return(NULL)
-	if (!is.integer(selected)) stop('Can only select row indices by now')
-	selected - 1L
 }
 
 page_to_js <- function(page) {
