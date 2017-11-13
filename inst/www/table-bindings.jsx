@@ -1,6 +1,9 @@
 (function() {
 
-const dev = true
+const react_re = /.*react-16.0.0\/react\.(.*)\.js/
+const dev = Array.from(document.head.querySelectorAll('script'))
+	.filter(s => s.src.match(react_re))
+	.map(s => s.src.replace(react_re, '$1'))[0] === 'development'
 const N_GROUPS = [1,2,3,4]
 const PAGE_SIZES = [10, 100, 500]
 
