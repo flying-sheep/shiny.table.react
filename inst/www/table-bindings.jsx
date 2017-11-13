@@ -1,31 +1,44 @@
 (function() {
 
 const dev = true
+const N_GROUPS = [1,2,3,4]
+const PAGE_SIZES = [10, 100, 500]
 
 const get_empty_state = () => ({
 	select_group: [],
 	columns:      {},
 	page:         0,
 	page_size:    100,
+	n_groups:     2,
 	callback:     null,
 	error:        null,
 })
 
-const Paginator = ({onSelectPage, onSelectSize, n_pages, page, page_size}) => (
-	<div className="paginator">
-		<select key="select"
-			className="page-size"
-			onChange={e => onSelectSize(+e.target.value)}
-			style={{display: n_pages === 0 ? 'none' : null}}
-		>
-		{[10, 100, 500].map(size =>
-			<option
-				key={size}
-				value={size}
-				selected={size === page_size}
-			>{size}</option>
-		)}
-		</select>
+const SimpleSelect = ({onSelect, values, selected_value, ...props}) =>
+	<select {...props} onChange={e => onSelect(+e.target.value)}>
+	{values.map(v =>
+		<option key={v} value={v} selected={v === selected_value}>{v}</option>
+	)}
+	</select>
+
+const Paginator = ({
+	onSelectPage, onSelectSize, onSelectNGroups,
+	n_pages, page, page_size,
+	n_groups,
+}) => (
+	<div className="paginator" style={{display: n_pages === 0 ? 'none' : null}}>
+		<SimpleSelect key="n-groups" className="n-groups"
+			title="Number of selection groups (colors)"
+			onSelect={groups => onSelectNGroups(groups)}
+			values={N_GROUPS}
+			selected_value={n_groups}
+		/>
+		<SimpleSelect key="page-size" className="page-size"
+			title="Table page size"
+			onSelect={size => onSelectSize(size)}
+			values={PAGE_SIZES}
+			selected_value={page_size}
+		/>
 		<div key="pages" className="pages">
 		{Array(n_pages).fill(null).map((_, p) =>
 			<button key={p}
@@ -36,7 +49,12 @@ const Paginator = ({onSelectPage, onSelectSize, n_pages, page, page_size}) => (
 	</div>
 )
 
-const Table = ({onSelectRow, columns, page, page_size, select_group}) => {
+const Table = ({
+	onSelectRow,
+	columns,
+	page, page_size,
+	select_group, n_groups,
+}) => {
 	const cols = Object.values(columns)
 	const {ncol, nrow} = dims(columns)
 	if (nrow === 0 || ncol === 0)
@@ -56,7 +74,7 @@ const Table = ({onSelectRow, columns, page, page_size, select_group}) => {
 			{Array(this_page_size).fill(null).map((_, r) => {
 				const row = page * page_size + r
 				const group = select_group[row]
-				const next_group = group === null ? 0 : (group+1 < 9 ? group+1 : null)
+				const next_group = group === null ? 0 : (group+1 < n_groups ? group+1 : null)
 				return (
 					<tr key={r}
 						className={group === null ? null : `selected select-${group}`}
@@ -89,7 +107,7 @@ class TableReact extends React.Component {
 	}
 	
 	render() {
-		const {columns, page, page_size, error, callback, select_group} = this.state
+		const {columns, page, page_size, error, callback, select_group, n_groups} = this.state
 		if (error) return <pre className="error">{error}</pre>
 		
 		const {nrow} = dims(columns)
@@ -102,7 +120,8 @@ class TableReact extends React.Component {
 				n_pages={n_pages}
 				page={page}
 				page_size={page_size}
-				/>
+				n_groups={n_groups}
+			/>
 		return [
 			paginator('pages-top'),
 			<Table key="table"
@@ -111,6 +130,7 @@ class TableReact extends React.Component {
 				page={page}
 				page_size={page_size}
 				select_group={select_group}
+				n_groups={n_groups}
 			/>,
 			paginator('pages-bottom'),
 		]
