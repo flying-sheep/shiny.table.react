@@ -18,7 +18,10 @@ const Paginator = ({onSelectPage, onSelectSize, n_pages, page}) => [
 			onClick={() => onSelectPage(p)}
 		>{p + 1}</button>
 	),
-	<select key="select" onChange={e => onSelectSize(+e.target.value)}>
+	<select key="select"
+		onChange={e => onSelectSize(+e.target.value)}
+		style={{display: n_pages === 0 ? 'none' : null}}
+	>
 	{[10, 100, 500].map(size =>
 		<option key={size} value={size}>{size}</option>
 	)}
@@ -80,7 +83,7 @@ class TableReact extends React.Component {
 		if (error) return <pre className="error">{error}</pre>
 		
 		const {nrow} = dims(columns)
-		const n_pages = Math.max(1, Math.ceil(nrow / page_size))
+		const n_pages = Math.ceil(nrow / page_size)
 		
 		return [
 			<Table key="table"
